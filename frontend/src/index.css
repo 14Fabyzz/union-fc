@@ -1,0 +1,81 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  * { box-sizing: border-box; }
+  body {
+    background-color: #f1f5f9;
+    color: #111827;
+    font-family: 'Inter', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  ::-webkit-scrollbar { width: 5px; height: 5px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 99px; }
+  ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+}
+
+/* ── Shared component styles (plain CSS, no @apply with custom tokens) ── */
+.card {
+  background: #ffffff;
+  border-radius: 1rem;
+  border: 1px solid #f3f4f6;
+  box-shadow: 0 1px 3px 0 rgb(0 0 0 / .07), 0 1px 2px -1px rgb(0 0 0 / .04);
+}
+
+.card-hover { transition: box-shadow 0.2s; }
+.card-hover:hover { box-shadow: 0 4px 14px 0 rgb(0 0 0 / .10); }
+
+.input {
+  display: block;
+  width: 100%;
+  padding: 0.625rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  background: #fff;
+  color: #111827;
+  transition: border-color .15s, box-shadow .15s;
+  outline: none;
+}
+.input.pl-10 { padding-left: 2.5rem; }
+.input.pl-11 { padding-left: 2.75rem; }
+.input::placeholder { color: #9ca3af; }
+.input:focus {
+  border-color: #0e1d5c;
+  box-shadow: 0 0 0 3px rgb(14 29 92 / .15);
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.125rem 0.625rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.sidebar-link {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: rgb(191 219 254 / .7);
+  transition: color .15s, background .15s;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: none;
+}
+.sidebar-link:hover { color: #fff; background: rgb(255 255 255 / .1); }
+.sidebar-link-active { color: #fff; background: rgb(255 255 255 / .15); }
+
+@keyframes modal-in {
+  from { opacity: 0; transform: scale(.96) translateY(8px); }
+  to   { opacity: 1; transform: scale(1)  translateY(0); }
+}
