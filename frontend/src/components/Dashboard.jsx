@@ -2,9 +2,10 @@ import { useState, useEffect, useMemo } from 'react'
 import {
   CheckCircle2, XCircle, Users, Clock,
   Search, ChevronLeft, ChevronRight,
-  TrendingUp, Eye, EyeOff,
+  TrendingUp, Eye, EyeOff, MessageCircle,
 } from 'lucide-react'
 import { api } from '../services/api'
+import Modal from './Modal'
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -137,6 +138,8 @@ export default function Dashboard() {
   const [selectedCat, setSelectedCat] = useState('all')
   const [hidePaid, setHidePaid]       = useState(false)
   const [search, setSearch]           = useState('')
+  const [confirm, setConfirm]         = useState(null) // { student, month }
+  const [confirming, setConfirming]   = useState(false)
 
   const currentMonth = getMonthStr(monthOffset)
 
@@ -174,22 +177,43 @@ export default function Dashboard() {
 
   async function handleToggle(student) {
     const wasPaid = isPaid(student)
-    setStudents(prev => prev.map(s => {
-      if (s.id !== student.id) return s
-      const meses = wasPaid
-        ? s.mesesPagados.filter(m => m !== currentMonth)
-        : [...s.mesesPagados, currentMonth]
-      return { ...s, mesesPagados: meses }
-    }))
-    try { await api.togglePago(student.id, currentMonth) }
-    catch {
-      setStudents(prev => prev.map(s => {
-        if (s.id !== student.id) return s
-        const meses = wasPaid
-          ? [...s.mesesPagados, currentMonth]
-          : s.mesesPagados.filter(m => m !== currentMonth)
-        return { ...s, mesesPagados: meses }
-      }))
+
+    // Revertir pago: directo sin confirmación
+    if (wasPaid) {
+      setStudents(prev => prev.map(s =>
+        s.id !== student.id ? s : { ...s, mesesPagados: s.mesesPagados.filter(m => m !== currentMonth) }
+      ))
+      try { await api.togglePago(student.id, currentMonth) }
+      catch {
+        setStudents(prev => prev.map(s =>
+          s.id !== student.id ? s : { ...s, mesesPagados: [...s.mesesPagados, currentMonth] }
+        ))
+      }
+      return
+    }
+
+    // Marcar como pagado: pedir confirmación
+    setConfirm({ student, month: currentMonth })
+  }
+
+  async function handleConfirmarPago() {
+    if (!confirm) return
+    const { student, month } = confirm
+    setConfirming(true)
+
+    setStudents(prev => prev.map(s =>
+      s.id !== student.id ? s : { ...s, mesesPagados: [...s.mesesPagados, month] }
+    ))
+
+    try {
+      await api.togglePago(student.id, month)
+    } catch {
+      setStudents(prev => prev.map(s =>
+        s.id !== student.id ? s : { ...s, mesesPagados: s.mesesPagados.filter(m => m !== month) }
+      ))
+    } finally {
+      setConfirming(false)
+      setConfirm(null)
     }
   }
 
@@ -349,6 +373,47 @@ export default function Dashboard() {
           </div>
           <span className="text-xs text-gray-400 shrink-0">{stats.paid}/{stats.total}</span>
         </div>
+      )}
+
+      {/* ── Modal confirmación de pago ── */}
+      {confirm && (
+        <Modal title="Confirmar Pago" onClose={() => !confirming && setConfirm(null)} size="sm">
+          <div className="space-y-5">
+            <div className="flex items-center gap-3 p-4 bg-emerald-50 rounded-xl border border-emerald-100">
+              <MessageCircle className="w-8 h-8 text-emerald-600 shrink-0" />
+              <div>
+                <p className="font-semibold text-gray-900 leading-tight">{confirm.student.nombre}</p>
+                <p className="text-sm text-gray-500 mt-0.5">{formatMonthLabel(confirm.month)}</p>
+              </div>
+            </div>
+            <p className="text-sm text-gray-600">
+              Se marcará el pago como <strong>confirmado</strong> y se enviará una notificación
+              por <strong>WhatsApp</strong> al número registrado del jugador.
+            </p>
+            <div className="flex gap-2">
+              <button
+                onClick={() => setConfirm(null)}
+                disabled={confirming}
+                className="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-gray-600
+                           text-sm font-semibold hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleConfirmarPago}
+                disabled={confirming}
+                className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl
+                           bg-emerald-500 hover:bg-emerald-600 text-white text-sm font-semibold
+                           shadow-sm transition-colors disabled:opacity-50"
+              >
+                {confirming
+                  ? <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  : <CheckCircle2 className="w-4 h-4" />}
+                Confirmar pago
+              </button>
+            </div>
+          </div>
+        </Modal>
       )}
 
       {/* ── Player List ── */}

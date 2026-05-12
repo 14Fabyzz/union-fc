@@ -9,7 +9,7 @@ import Modal from './Modal'
 
 // ── Form ─────────────────────────────────────────────────────────────────────
 
-const EMPTY = { identificacion: '', nombre: '', categoria: '' }
+const EMPTY = { identificacion: '', nombre: '', categoria: '', telefono: '' }
 
 function JugadorForm({ initial = EMPTY, onSubmit, submitting }) {
   const [form, setForm] = useState(initial)
@@ -37,6 +37,14 @@ function JugadorForm({ initial = EMPTY, onSubmit, submitting }) {
         </label>
         <input required value={form.categoria} onChange={set('categoria')}
                placeholder="Ej. Sub-12" className="input" />
+      </div>
+      <div>
+        <label className="block text-xs font-semibold text-gray-500 mb-1.5 uppercase tracking-wide">
+          Teléfono WhatsApp
+        </label>
+        <input value={form.telefono ?? ''} onChange={set('telefono')}
+               placeholder="Ej. 573001234567" className="input" />
+        <p className="text-xs text-gray-400 mt-1">Incluye el código de país. Ej: 57 para Colombia.</p>
       </div>
       <button type="submit" disabled={submitting} className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-union-red hover:bg-union-red-dark text-white text-sm font-semibold shadow-sm transition-all duration-150 active:scale-95 w-full justify-center py-3">
         {submitting
@@ -384,7 +392,7 @@ export default function GestionJugadores() {
       {modal && modal !== 'new' && (
         <Modal title="Editar Jugador" onClose={() => setModal(null)}>
           <JugadorForm
-            initial={{ identificacion: modal.identificacion, nombre: modal.nombre, categoria: modal.categoria }}
+            initial={{ identificacion: modal.identificacion, nombre: modal.nombre, categoria: modal.categoria, telefono: modal.telefono ?? '' }}
             onSubmit={handleUpdate}
             submitting={submitting}
           />

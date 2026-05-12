@@ -30,6 +30,8 @@ public class Estudiante {
 
     private String categoria;
 
+    private String telefono;
+
     @Builder.Default
     private boolean activo = true;
 

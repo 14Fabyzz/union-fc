@@ -14,4 +14,6 @@ public class EstudianteRequest {
 
     @NotBlank(message = "La categoría es obligatoria")
     private String categoria;
+
+    private String telefono;
 }

@@ -16,6 +16,7 @@ import java.util.List;
 public class EstudianteService {
 
     private final EstudianteRepository repo;
+    private final WhatsAppService whatsAppService;
 
     // ── Consultas ────────────────────────────────────────────────────────────
 
@@ -38,6 +39,7 @@ public class EstudianteService {
                 .identificacion(req.getIdentificacion().trim())
                 .nombre(req.getNombre().trim())
                 .categoria(req.getCategoria().trim())
+                .telefono(req.getTelefono() != null ? req.getTelefono().trim() : null)
                 .build();
         Estudiante saved = repo.save(e);
         log.debug("Jugador creado: {}", saved.getId());
@@ -58,6 +60,7 @@ public class EstudianteService {
         e.setIdentificacion(req.getIdentificacion().trim());
         e.setNombre(req.getNombre().trim());
         e.setCategoria(req.getCategoria().trim());
+        e.setTelefono(req.getTelefono() != null ? req.getTelefono().trim() : null);
         return repo.save(e);
     }
 
@@ -76,14 +79,23 @@ public class EstudianteService {
         Estudiante e = buscarPorId(id);
         String mes = req.getMes();
 
-        if (e.getMesesPagados().contains(mes)) {
+        boolean seEstaMarcandoPagado = !e.getMesesPagados().contains(mes);
+
+        if (!seEstaMarcandoPagado) {
             e.getMesesPagados().remove(mes);
             log.debug("Pago revertido: jugador={} mes={}", id, mes);
         } else {
             e.getMesesPagados().add(mes);
             log.debug("Pago registrado: jugador={} mes={}", id, mes);
         }
-        return repo.save(e);
+
+        Estudiante saved = repo.save(e);
+
+        if (seEstaMarcandoPagado) {
+            whatsAppService.enviarFactura(saved.getTelefono(), saved.getNombre(), saved.getCategoria(), mes);
+        }
+
+        return saved;
     }
 
     // ── Utilidades ───────────────────────────────────────────────────────────

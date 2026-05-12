@@ -17,7 +17,7 @@ from pymongo import MongoClient, errors
 from datetime import datetime
 
 # ── Configuración ──────────────────────────────────────────────────────────────
-MONGO_URI   = "mongodb://localhost:27017"
+MONGO_URI   = "mongodb+srv://fabianBU:SaAxggsUkmgSX8JI@cluster0.hbl1qui.mongodb.net/escuela_futbol?appName=Cluster0"
 DATABASE    = "escuela_futbol"
 COLLECTION  = "estudiantes"
 EXCEL_FILE  = "jugadores_sub12_sub13.xlsx"
