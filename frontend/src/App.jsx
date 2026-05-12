@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { LayoutDashboard, Users, Menu, X, ChevronRight } from 'lucide-react'
+import { LayoutDashboard, Users, Menu, X, ChevronRight, LogOut } from 'lucide-react'
 import Dashboard from './components/Dashboard'
 import GestionJugadores from './components/GestionJugadores'
+import Login from './components/Login'
 
 const NAV = [
   { id: 'dashboard', label: 'Mensualidades',   sub: 'Control de pagos',   Icon: LayoutDashboard },
@@ -9,8 +10,14 @@ const NAV = [
 ]
 
 export default function App() {
+  const [loggedIn, setLoggedIn]     = useState(() => localStorage.getItem('ufc_auth') === '1')
   const [active, setActive]         = useState('dashboard')
   const [sidebarOpen, setSidebar]   = useState(false)
+
+  const login  = () => { localStorage.setItem('ufc_auth', '1'); setLoggedIn(true)  }
+  const logout = () => { localStorage.removeItem('ufc_auth');   setLoggedIn(false) }
+
+  if (!loggedIn) return <Login onLogin={login} />
 
   const current = NAV.find(n => n.id === active)
 
@@ -110,6 +117,15 @@ export default function App() {
             <img src="/logo.png" alt="" className="w-6 h-6 rounded-full object-cover" />
             <span className="text-white text-xs font-bold tracking-wide">UNIÓN FC</span>
           </div>
+
+          {/* Logout */}
+          <button
+            onClick={logout}
+            title="Cerrar sesión"
+            className="p-2 rounded-xl text-gray-400 hover:text-union-red hover:bg-red-50 transition-colors"
+          >
+            <LogOut className="w-4 h-4" />
+          </button>
         </header>
 
         {/* Page content */}
