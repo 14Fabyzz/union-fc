@@ -41,7 +41,8 @@ export default function App() {
     e.preventDefault()
     setPwdLoading(true); setPwdError(''); setPwdSuccess(false)
     try {
-      const res = await fetch('/api/auth/change-password', {
+      const base = (import.meta.env.VITE_API_URL ?? '') + '/api'
+      const res = await fetch(`${base}/auth/change-password`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
