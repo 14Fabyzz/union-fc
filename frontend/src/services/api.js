@@ -1,10 +1,24 @@
 const BASE = (import.meta.env.VITE_API_URL ?? '') + '/api'
 
+function getToken() {
+  return localStorage.getItem('ufc_token')
+}
+
 async function request(path, options = {}) {
+  const token = getToken()
   const res = await fetch(`${BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...options.headers },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...options.headers,
+    },
     ...options,
   })
+  if (res.status === 401) {
+    localStorage.removeItem('ufc_token')
+    window.dispatchEvent(new Event('ufc:logout'))
+    throw new Error('Sesión expirada')
+  }
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
     throw new Error(body.error || `HTTP ${res.status}`)

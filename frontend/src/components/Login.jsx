@@ -36,11 +36,21 @@ export default function Login({ onLogin }) {
     e.preventDefault()
     setLoading(true)
     setError('')
-    await new Promise(r => setTimeout(r, 1100))
-    if (email === 'admin@unionfc.com' && password === 'union2024') {
-      onLogin()
-    } else {
-      setError('Credenciales incorrectas. Verificá tu usuario y contraseña.')
+    try {
+      const res = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, password }),
+      })
+      if (res.ok) {
+        const { token } = await res.json()
+        onLogin(token, email)
+      } else {
+        setError('Credenciales incorrectas. Verificá tu usuario y contraseña.')
+      }
+    } catch {
+      setError('Error de conexión. Verificá que el servidor esté activo.')
+    } finally {
       setLoading(false)
     }
   }
@@ -417,7 +427,7 @@ export default function Login({ onLogin }) {
                 <input
                   type="email" value={email} required
                   onChange={e => setEmail(e.target.value)}
-                  placeholder="admin@unionfc.com"
+                  placeholder="correo@ejemplo.com"
                   onFocus={focusIn} onBlur={focusOut}
                   style={{ ...inputStyle, padding: '13px 16px 13px 42px' }}
                 />

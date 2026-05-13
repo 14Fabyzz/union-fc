@@ -1,8 +1,9 @@
-import { useState } from 'react'
-import { LayoutDashboard, Users, Menu, X, ChevronRight, LogOut } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { LayoutDashboard, Users, Menu, X, ChevronRight, LogOut, KeyRound } from 'lucide-react'
 import Dashboard from './components/Dashboard'
 import GestionJugadores from './components/GestionJugadores'
 import Login from './components/Login'
+import Modal from './components/Modal'
 
 const NAV = [
   { id: 'dashboard', label: 'Mensualidades',   sub: 'Control de pagos',   Icon: LayoutDashboard },
@@ -10,12 +11,57 @@ const NAV = [
 ]
 
 export default function App() {
-  const [loggedIn, setLoggedIn]     = useState(() => localStorage.getItem('ufc_auth') === '1')
-  const [active, setActive]         = useState('dashboard')
-  const [sidebarOpen, setSidebar]   = useState(false)
+  const [loggedIn, setLoggedIn]         = useState(() => !!localStorage.getItem('ufc_token'))
+  const [active, setActive]             = useState('dashboard')
 
-  const login  = () => { localStorage.setItem('ufc_auth', '1'); setLoggedIn(true)  }
-  const logout = () => { localStorage.removeItem('ufc_auth');   setLoggedIn(false) }
+  useEffect(() => {
+    const handler = () => { setLoggedIn(false) }
+    window.addEventListener('ufc:logout', handler)
+    return () => window.removeEventListener('ufc:logout', handler)
+  }, [])
+  const [sidebarOpen, setSidebar]       = useState(false)
+  const [changePwdOpen, setChangePwd]   = useState(false)
+  const [pwdEmail, setPwdEmail]         = useState('')
+  const [pwdCurrent, setPwdCurrent]     = useState('')
+  const [pwdNew, setPwdNew]             = useState('')
+  const [pwdError, setPwdError]         = useState('')
+  const [pwdSuccess, setPwdSuccess]     = useState(false)
+  const [pwdLoading, setPwdLoading]     = useState(false)
+
+  const login  = (token, email) => { localStorage.setItem('ufc_token', token); localStorage.setItem('ufc_email', email); setLoggedIn(true) }
+  const logout = () => { localStorage.removeItem('ufc_token'); localStorage.removeItem('ufc_email'); setLoggedIn(false) }
+
+  const openChangePwd = () => {
+    setPwdEmail(localStorage.getItem('ufc_email') || '')
+    setPwdCurrent(''); setPwdNew(''); setPwdError(''); setPwdSuccess(false)
+    setChangePwd(true)
+  }
+
+  const handleChangePassword = async (e) => {
+    e.preventDefault()
+    setPwdLoading(true); setPwdError(''); setPwdSuccess(false)
+    try {
+      const res = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${localStorage.getItem('ufc_token')}`,
+        },
+        body: JSON.stringify({ email: pwdEmail, currentPassword: pwdCurrent, newPassword: pwdNew }),
+      })
+      const data = await res.json()
+      if (res.ok) {
+        setPwdSuccess(true)
+        setTimeout(() => setChangePwd(false), 1500)
+      } else {
+        setPwdError(data.error || 'Error al cambiar la contraseña')
+      }
+    } catch {
+      setPwdError('Error de conexión.')
+    } finally {
+      setPwdLoading(false)
+    }
+  }
 
   if (!loggedIn) return <Login onLogin={login} />
 
@@ -86,12 +132,19 @@ export default function App() {
         </nav>
 
         {/* Footer */}
-        <div className="px-5 py-4 border-t border-white/10">
+        <div className="px-5 py-4 border-t border-white/10 space-y-3">
+          <button
+            onClick={openChangePwd}
+            className="w-full flex items-center gap-2 text-blue-300/50 hover:text-white text-xs transition-colors"
+          >
+            <KeyRound className="w-3.5 h-3.5" />
+            Cambiar contraseña
+          </button>
           <div className="flex items-center gap-2">
             <div className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
             <span className="text-blue-300/50 text-xs">Sistema activo</span>
           </div>
-          <p className="text-blue-300/30 text-[10px] mt-1">v1.0.0 · Unión FC</p>
+          <p className="text-blue-300/30 text-[10px]">v1.0.0 · Unión FC</p>
         </div>
       </aside>
 
@@ -134,6 +187,53 @@ export default function App() {
           {active === 'jugadores' && <GestionJugadores />}
         </main>
       </div>
+
+      {/* Modal cambio de contraseña */}
+      {changePwdOpen && (
+        <Modal title="Cambiar contraseña" onClose={() => setChangePwd(false)} size="sm">
+          <form onSubmit={handleChangePassword} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Correo electrónico</label>
+              <input
+                type="email" required value={pwdEmail}
+                onChange={e => setPwdEmail(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-union-red"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Contraseña actual</label>
+              <input
+                type="password" required value={pwdCurrent}
+                onChange={e => setPwdCurrent(e.target.value)}
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-union-red"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-500 mb-1">Nueva contraseña</label>
+              <input
+                type="password" required minLength={8} value={pwdNew}
+                onChange={e => setPwdNew(e.target.value)}
+                placeholder="Mínimo 8 caracteres"
+                className="w-full border border-gray-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-union-red"
+              />
+            </div>
+
+            {pwdError && (
+              <p className="text-sm text-red-500 bg-red-50 rounded-lg px-3 py-2">{pwdError}</p>
+            )}
+            {pwdSuccess && (
+              <p className="text-sm text-emerald-600 bg-emerald-50 rounded-lg px-3 py-2">Contraseña actualizada correctamente.</p>
+            )}
+
+            <button
+              type="submit" disabled={pwdLoading}
+              className="w-full bg-union-red text-white rounded-xl py-2.5 text-sm font-semibold hover:bg-red-700 transition-colors disabled:opacity-50"
+            >
+              {pwdLoading ? 'Guardando...' : 'Actualizar contraseña'}
+            </button>
+          </form>
+        </Modal>
+      )}
     </div>
   )
 }
